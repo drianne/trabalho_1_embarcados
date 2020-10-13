@@ -1,0 +1,8 @@
+config: 
+	gcc main.c ./dependencies/bme/bme280.c ./modules/i2c/temperature_module_i2c.c \
+	 	-I ./dependencies/bme \
+		-I ./dependencies/lcd \
+		-lwiringPi -o regulator
+
+clean:
+	rm -v regulator	
