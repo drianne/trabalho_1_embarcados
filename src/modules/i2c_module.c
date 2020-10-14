@@ -21,7 +21,7 @@
 
 /******************************************************************************/
 /*!                         Own header files                                  */
-#include "bme280.h"
+#include "../../inc/bme/bme280.h"
 
 /******************************************************************************/
 /*!                               Structures                                  */
@@ -71,7 +71,7 @@ int8_t user_i2c_read(uint8_t reg_addr, uint8_t *data, uint32_t len, void *intf_p
 int8_t user_i2c_write(uint8_t reg_addr, const uint8_t *data, uint32_t len, void *intf_ptr);
 
 /*! Function reads temperature, humidity and pressure data in forced mode.
- * dev:   Structure instance of bme280_dev. *
+ * dev: Structure instance of bme280_dev. *
  * ret BME280_OK - Success.
  * ret BME280_E_NULL_PTR - Error: Null pointer error
  * ret BME280_E_COMM_FAIL - Error: Communication fail error
@@ -79,11 +79,9 @@ int8_t user_i2c_write(uint8_t reg_addr, const uint8_t *data, uint32_t len, void 
 
 int8_t stream_sensor_data_forced_mode(struct bme280_dev *dev);
 
-
 int main(int argc, char* argv[])
 {  
     struct bme280_dev dev;
-
     struct identifier id;
 
     /* Variable to define the result */
@@ -260,29 +258,24 @@ int8_t stream_sensor_data_forced_mode(struct bme280_dev *dev)
         return rslt;
     }
 
-    printf("Temperature, Pressure, Humidity\n");
+    printf("Esperando imprimir temperatura\n");
 
     /*Calculate the minimum delay required between consecutive measurement based upon the sensor enabled
      *  and the oversampling configuration. */
     req_delay = bme280_cal_meas_delay(&dev->settings);
 
-    float total_temperature, total_humidity, total_pressure;
-    int contador = 0;
-
-    total_temperature = 0;
-    total_humidity = 0 ;
-    total_pressure = 0; 
+    // float total_temperature = 0;
+    // int contador = 0;
 
     // Start CSV
-    if( access( "temps.csv", F_OK ) == -1 ) {
-        fp=fopen("temps.csv","a+");
-        fprintf(fp,"Data/hora, Temperatura, Umidade, Pressão"); /* Data/hora, Temp Interna, Temp Externa, Temp Usuário*/
-        fclose(fp);
-    }
+    // if( access( "temps.csv", F_OK ) == -1 ) {
+    //     fp=fopen("temps.csv","a+");
+    //     fprintf(fp,"Data/hora, Temp Interna, Temp Externa, Temp Usuário");
+    //     fclose(fp);
+    // }
     
     /* Continuously stream sensor data */
-    while (1)
-    {        
+    while(1){        
         /* Set the sensor to forced mode */
         rslt = bme280_set_sensor_mode(BME280_FORCED_MODE, dev);
 
@@ -296,6 +289,7 @@ int8_t stream_sensor_data_forced_mode(struct bme280_dev *dev)
         dev->delay_us(req_delay, dev->intf_ptr);
 
         rslt = bme280_get_sensor_data(BME280_ALL, &comp_data, dev);
+        
         if (rslt != BME280_OK)
         {
             fprintf(stderr, "Failed to get sensor data (code %+d).", rslt);
@@ -303,19 +297,17 @@ int8_t stream_sensor_data_forced_mode(struct bme280_dev *dev)
         }
         
         // print_sensor_data(&comp_data);
-        total_temperature += comp_data.temperature;
-        total_pressure += 0.01 * comp_data.pressure;
-        total_humidity += comp_data.humidity;
-        contador+=1;
-
-        if(contador == 10){
-            time ( &rawtime );
-            timeinfo = localtime ( &rawtime );           
+        // total_temperature += comp_data.temperature;
+        // total_temperature = 0;
+        printf("%f\n", comp_data.temperature); // <<<<<<<<<<<<<< AQUI
+        // if(contador == 10){
+        //     time ( &rawtime );
+        //     timeinfo = localtime ( &rawtime );           
             
-            save_into_csv(&fp, timeinfo, total_temperature/10 , total_humidity/10 , total_pressure/10);
+        //     save_into_csv(&fp, timeinfo, total_temperature/10 , total_humidity/10 , total_pressure/10);
             
-            contador = 0;
-        }
+        //     contador = 0;
+        // }
         sleep(1);
     }
 
