@@ -11,14 +11,14 @@
 #include "./modules/user.c"
 
 
-int executar_temp, executa_sistema, executa_poten, executa_show_temps, executa_salva_csv, executa_sistema;
-int contador_temperatura, contador_sistema, contador_show_temps, codigo, contador_salva_csv;
+// int executar_temp, executa_sistema, executa_poten, executa_show_temps, executa_salva_csv, executa_sistema;
+// int contador_temperatura, contador_sistema, contador_show_temps, codigo, contador_salva_csv;
 float temperatura_interna, temperatura_externa, temp, temp_histerese, histerese, temperatura_recebida;
 
-contador_temperatura = 0;
-contador_sistema = 0;
-contador_show_temps = 0;
-contador_salva_csv = 0;
+// contador_temperatura = 0;
+// contador_sistema = 0;
+// contador_show_temps = 0;
+// contador_salva_csv = 0;
 
 void controla_sistema(){
     if (temperatura_interna < (temperatura_recebida - histerese)){
@@ -30,94 +30,50 @@ void controla_sistema(){
     }
 }
 
-// histerese = 0;
-
-// void apresenta_menu(){
+// void aciona_sistema(){
 //     while(1){
-//         codigo = menu();
-//         switch (codigo)
-//         {
-//         case 1:
-//             scanf("%f", &temp);
-//             temperatura_recebida = temp; 
-//             break;
-//         case 2: 
-//             executa_poten = 1;
-//             break;
-//         case 3: 
-//             scanf("%f", &temp_histerese);
-//             histerese = temp_histerese;
-//             break;
-//         default:
-//             exit(1);
-//             break;
+//         if (temperatura_interna < (temperatura_recebida - histerese)){
+//             start_fan(OFF);
+//             start_resistor(ON);
+//         }else if (temperatura_interna > (temperatura_recebida + histerese)){
+//             start_resistor(OFF);
+//             start_fan(ON);
+//         }else{
+//             start_resistor(OFF);
+//             start_fan(OFF);
 //         }
+//         usleep(500000);
 //     }
 // }
 
-// void salva_csv(){
+// void get_temperature_value(argc, argv){
 //     while(1){
-//         if(executa_salva_csv == 1){
-//             save_into_csv(temperatura_interna, temperatura_externa, temperatura_recebida);
-//             executa_salva_csv = 0;
-//         }
-//         contador_salva_csv ++; 
-//         usleep(100000);
-//     }    
-// }
-
-// void mostra_temps(){
-//     while(1){
-//         if (executa_show_temps == 1){
-//             imprime_led(temperatura_interna, temperatura_externa, temperatura_recebida); 
-//             executa_show_temps = 0;
-//         }
-//         contador_show_temps ++;
-//         usleep(100000);
+//         temperatura_interna = get_uart_value(1);
+//         get_external_temperature(argc, argv, temperatura_externa);
+//         usleep(500000);
 //     }
-    
 // }
 
 // void get_potenciometro(){
 //     while(1){
-//         if(executa_poten == 1){
-//             temperatura_recebida = get_uart_value(2);
-//             executa_poten = 0;
-//         }
-//         usleep(100000);
+//         temperatura_recebida = get_uart_value(2);
+//         usleep(500000);
 //     }
 // }
 
-// void get_temperature_value(){
+// void mostra_temps(){
 //     while(1){
-//         if(executar_temp == 1){
-//             temperatura_interna = get_uart_value(1);
-//             temperatura_externa = get_external_temperature();
-//             executar_temp = 0;
-//         }
-//         contador_temperatura ++;
-//         usleep(100000);
-//     }
+//         imprime_led(temperatura_interna, temperatura_externa, temperatura_recebida); 
+//         usleep(500000);
+//     }    
 // }
 
-// void aciona_sistema(){
-//     while(1){
-//         if(executa_sistema == 1){
-//             if (temperatura_interna < (temperatura_recebida - histerese)){
-//                 start_fan(OFF);
-//                 start_resistor(ON);
-//             }else if (temperatura_interna > (temperatura_recebida + histerese)){
-//                 start_resistor(OFF);
-//                 start_fan(ON);
-//             }
-
-//             executa_sistema = 0;
-//         }
-        
-//         contador_sistema ++;
-//         usleep(100000);
-//     }
-// }
+void finaliza(int sinal) {
+    start_resistor(OFF);
+    start_fan(OFF);
+    bcm2835_close();
+    exit(0);
+}
 
 // void signal_controller(int sig) { 
 //     if(contador_temperatura == 5){
@@ -143,27 +99,22 @@ void controla_sistema(){
 // } 
 
 int main(int argc, char* argv[]){
-    // pthread_t thread_temperatura, thread_aciona_sistema, thread_potenciometro;
-    // pthread_t thread_mostra_temperaturas, thread_mostra_temperaturas;
-    // pthread_t thread_armazena_csv, thread_menu;
+    // pthread_t thread_temperatura, thread_potenciometro, thread_mostra_temperaturas, thread_aciona_sistema, thread_armazena_csv;
+    // signal(SIGALRM, finaliza);
     
-    
-    // pthread_create (&thread_temperatura, NULL, &get_temperature_value, NULL); //Threads temperature
     // pthread_create (&thread_aciona_sistema, NULL, &aciona_sistema, NULL);
+    // pthread_create (&thread_temperatura, NULL, &get_temperature_value, NULL); //Threads temperature
     // pthread_create (&thread_potenciometro, NULL, &get_potenciometro, NULL);
     // pthread_create (&thread_mostra_temperaturas, NULL, &mostra_temps, NULL);
     // pthread_create (&thread_armazena_csv, NULL, &salva_csv, NULL);
-    // pthread_create (&thread_menu, NULL, &apresenta_menu, NULL);
+
+    // // pthread_create (&thread_menu, NULL, &apresenta_menu, NULL);
 
     // pthread_join(thread_temperatura, NULL);
     // pthread_join(thread_aciona_sistema, NULL);
     // pthread_join(thread_potenciometro, NULL);
     // pthread_join(thread_mostra_temperaturas, NULL);
     // pthread_join(thread_armazena_csv, NULL);
-    // pthread_join(thread_menu, NULL);
-
-    // signal(SIGALRM, signal_controller);
-    // alarm(1000);
     
     int uart0_filestream;
     int cod; 
@@ -205,20 +156,20 @@ int main(int argc, char* argv[]){
         printf("\nImprimindo temperaturas\n");
         imprime_led(temperatura_interna, temperatura_externa, temperatura_recebida);
         
-        // temperatura_interna = get_uart_value(1);
-        // printf("Temperatura Interna: %f", temperatura_interna);
-        // sleep(1);
-        // temperatura_externa = get_external_temperature(argc, argv);
-        // printf("Temperatura Externa: %f", temperatura_externa);
-        // sleep(1);
+        temperatura_interna = get_uart_value(1);
+        printf("Temperatura Interna: %f", temperatura_interna);
+        sleep(1);
+        temperatura_externa = get_external_temperature(argc, argv);
+        printf("Temperatura Externa: %f", temperatura_externa);
+        sleep(1);
 
-        // if(get_potenciometro){
-        //     temperatura_recebida = get_uart_value(2);
-        //     printf("Temperatura Recebida: %f", temperatura_recebida);
-        //     sleep(1);
-        // }
+        if(get_potenciometro){
+            temperatura_recebida = get_uart_value(2);
+            printf("Temperatura Recebida: %f", temperatura_recebida);
+            sleep(1);
+        }
         
-        // save_into_csv(temperatura_interna, temperatura_externa, temperatura_recebida);
+        save_into_csv(temperatura_interna, temperatura_externa, temperatura_recebida);
         
     }
     close(uart0_filestream);

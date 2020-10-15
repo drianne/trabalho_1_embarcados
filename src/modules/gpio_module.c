@@ -25,14 +25,7 @@ void setting_pins(){
     bcm2835_gpio_fsel(FAN, BCM2835_GPIO_FSEL_OUTP);
 }
 
-// void trata_interrupcao(int sinal) {
-//     start_resistor(OFF);
-//     start_fan(ON);
-//     bcm2835_close();
-//     exit(0);
-// }
-
-int run_all(){
+int test_module(){
 
     if (!bcm2835_init())
       exit(1);

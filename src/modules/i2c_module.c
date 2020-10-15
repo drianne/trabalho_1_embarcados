@@ -217,8 +217,6 @@ void save_into_csv(float temperatura_interna, float temperatura_externa, float t
 }
 
 /*!
- * @brief This API reads the sensor temperature, pressure and humidity data in forced mode.
- */
 int8_t stream_sensor_data_forced_mode(struct bme280_dev *dev)
 {   
     FILE *fp;
