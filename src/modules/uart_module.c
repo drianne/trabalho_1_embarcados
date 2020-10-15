@@ -6,16 +6,18 @@
 #include <errno.h>
 #include <string.h>
 
+// Temperatura interna 
+
 int open_uart(){
     int uart0 = -1;
     uart0 = open("/dev/serial0", O_RDWR | O_NOCTTY | O_NDELAY ); 
     
     if (uart0 == -1){
-        printf("Erro - Não foi possível iniciar a UART.\n");
+        printf("\nErro - Não foi possível iniciar a UART.\n");
         return -1;
     }
     else{
-        printf("UART inicializada!\n");
+        printf("\nUART inicializada!\n");
     }    
 
     struct termios options;
@@ -31,56 +33,45 @@ int open_uart(){
     return uart0;
 }
 
-void write_uart(int uart, unsigned char *tx_buffer){
-    if (uart != -1){
-        printf("Escrevendo na UART ...\n\n");
-        int count = write(uart, &tx_buffer[0], strlen((char *)tx_buffer));
-        if (count < 0) {
-            printf("UART erro\n");
-        } else {
-            printf("escrito.\n");
-        }
-    }
-}
-
-void read_uart(int uart){
+float read_uart(int uart){
     float rx_buffer;
-    int rx_length = read(uart, &rx_buffer, sizeof(rx_buffer)); //Filestream, buffer to store in, number of bytes to read (max)
-    if (rx_length > 0){
-        printf("%fºC\n", rx_buffer);
-    } else if (rx_length < 0){
-        printf("%s\n", strerror(errno));
-    } else {
-        printf("Nenhum dado disponível.\n");
-    }
+    int rx_length = read(uart, &rx_buffer, sizeof(rx_buffer)); 
+
+    return rx_buffer;
 }
 
-int main(int argc, const char * argv[]) {    
-    int uart0_filestream;
+int get_uart_value(int cod) {    
+    // int uart0_filestream;
     float dado_f;
     char dado_s[40];
-    unsigned char tx_buffer[260], *p_tx_buffer, cod_temp_interna, cod_potenciometro;
-    p_tx_buffer = &tx_buffer[0];    
+    unsigned char tx_buffer[260], *p_tx_buffer;
+    p_tx_buffer = &tx_buffer[0];       
+    unsigned char cod_temp_interna = 0xA1; // 1
+    unsigned char cod_potenciometro = 0xA2; // 2
+    float value; 
+    int uart0_filestream;
 
-    cod_temp_interna = 0xA1;
-    cod_potenciometro = 0xA2;
+    char padrao[] ={cod, 7, 5, 9, 5};
 
+    if(cod == 1){
+       padrao[0] = cod_temp_interna;
+    }else if (cod == 2){
+       padrao[0] = cod_potenciometro;
+    }
     uart0_filestream = open_uart();
 
-    do {
-        *p_tx_buffer++ = cod_potenciometro;
-        *p_tx_buffer++ = 7;
-        *p_tx_buffer++ = 5;
-        *p_tx_buffer++ = 9;
-        *p_tx_buffer++ = 5;
+    int count = write(uart0_filestream, &padrao[0], 5);
 
-        add_identity(p_tx_buffer);
-        write_uart(uart0_filestream, tx_buffer); 
-        sleep(1); 
-        read_uart(uart0_filestream);
+    if (count < 0) {
+        printf("UART erro\n");
+    } else {
+        printf("escrito.\n");
+    }
 
-    }while(1);
-
+    sleep(1); 
+    value = read_uart(uart0_filestream);
     close(uart0_filestream);
-   return 0;
+
+   return value;
 }
+
