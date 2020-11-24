@@ -2,76 +2,89 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <termios.h> 
-#include <errno.h>
+#include <termios.h>
 #include <string.h>
+#include "../../inc/uart_module.h"
 
-// Temperatura interna 
+int open_uart_connection();
+void escrever_dados_uart(unsigned char *, int);
+void formata_mensagem(int, unsigned char *);
+void ler_dados_uart(unsigned char *, int, int, struct Sensors *temps);
 
-int open_uart(){
-    int uart0 = -1;
-    uart0 = open("/dev/serial0", O_RDWR | O_NOCTTY | O_NDELAY ); 
-    
-    if (uart0 == -1){
-        printf("\nErro - Não foi possível iniciar a UART.\n");
-        return -1;
+void *uart_main(void *params)
+{
+    struct Sensors *temps = params;
+
+    int escolha;
+    int uart0_filestream = -1;
+
+    uart0_filestream = open_uart_connection();
+
+    unsigned char tx_buffer_temp[10];
+    unsigned char tx_buffer_pot[10];
+
+    while(1) {
+        formata_mensagem(TEMP, &tx_buffer_temp[0]);
+        formata_mensagem(POTEN, &tx_buffer_pot[0]);
+
+        escrever_dados_uart(&tx_buffer_temp[0], uart0_filestream);
+        ler_dados_uart(&tx_buffer_temp[0], uart0_filestream, TEMP, temps);
+        
+        if(!strcmp(temps->control_type, "p")) {
+            escrever_dados_uart(&tx_buffer_pot[0], uart0_filestream);
+            ler_dados_uart(&tx_buffer_pot[0], uart0_filestream, POTEN, temps);
+        }
+        usleep(500000);
     }
-    else{
-        printf("\nUART inicializada!\n");
-    }    
+    close(uart0_filestream);
+}
+
+int open_uart_connection(){
+    int uart0_filestream = -1;
+
+    uart0_filestream = open(UART_PORT, O_RDWR | O_NOCTTY | O_NDELAY | O_NONBLOCK); //Open in non blocking read/write mode
+
+    if (uart0_filestream == -1){
+        close(uart0_filestream);
+    }
 
     struct termios options;
-
-    tcgetattr(uart0, &options);
-    options.c_cflag = B115200 | CS8 | CLOCAL | CREAD;     
+    tcgetattr(uart0_filestream, &options);
+    options.c_cflag = B9600 | CS8 | CLOCAL | CREAD; //<Set baud rate
     options.c_iflag = IGNPAR;
     options.c_oflag = 0;
     options.c_lflag = 0;
-    tcflush(uart0, TCIFLUSH);
-    tcsetattr(uart0, TCSANOW, &options);
-
-    return uart0;
+    tcflush(uart0_filestream, TCIFLUSH);
+    tcsetattr(uart0_filestream, TCSANOW, &options);
+    return uart0_filestream;
 }
 
-float read_uart(int uart){
+void ler_dados_uart(unsigned char *tx_buffer, int uart0_filestream, int codigo, struct Sensors *temps){
     float rx_buffer;
-    int rx_length = read(uart, &rx_buffer, sizeof(rx_buffer)); 
-
-    return rx_buffer;
-}
-
-int get_uart_value(int cod) {    
-    // int uart0_filestream;
-    float dado_f;
-    char dado_s[40];
-    unsigned char tx_buffer[260], *p_tx_buffer;
-    p_tx_buffer = &tx_buffer[0];       
-    unsigned char cod_temp_interna = 0xA1; // 1
-    unsigned char cod_potenciometro = 0xA2; // 2
-    float value; 
-    int uart0_filestream;
-
-    char padrao[] ={cod, 7, 5, 9, 5};
-
-    if(cod == 1){
-       padrao[0] = cod_temp_interna;
-    }else if (cod == 2){
-       padrao[0] = cod_potenciometro;
-    }
-    uart0_filestream = open_uart();
-
-    int count = write(uart0_filestream, &padrao[0], 5);
-
-    if (count < 0) {
-        printf("UART erro\n");
+    int rx_length = read(uart0_filestream, &rx_buffer, sizeof(rx_buffer)); 
+    if (codigo == TEMP){
+        if(rx_buffer > 0){
+            temps->temp_interna= rx_buffer;
+        }         
     } else {
-        printf("escrito.\n");
-    }
-
-    sleep(1); 
-    value = read_uart(uart0_filestream);
-    close(uart0_filestream);
-
-   return value;
+        if(rx_buffer > 0){
+            temps->temp_externa = rx_buffer;
+        }
+    } 
 }
 
+void escrever_dados_uart(unsigned char *tx_buffer, int uart0_filestream){
+    int count = write(uart0_filestream, tx_buffer, strlen((char *)tx_buffer));
+}
+
+void formata_mensagem( int code, unsigned char *tx_buffer){
+    unsigned char *p_tx_buffer;
+    p_tx_buffer = tx_buffer;
+
+    *p_tx_buffer++ = code;
+    *p_tx_buffer++ = 7;
+    *p_tx_buffer++ = 5;
+    *p_tx_buffer++ = 9;
+    *p_tx_buffer++ = 5;
+    *p_tx_buffer++ = '\0';
+}

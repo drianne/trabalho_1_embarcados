@@ -1,6 +1,0 @@
-config: 
-	gcc ./src/main.c ./inc/bme/bme280.c -lwiringPiDev -lwiringPi -l bcm2835 -I . -o ./bin/trabalho_1
-	./bin/trabalho_1 /dev/i2c-1
-
-clean:
-	rm -v trabalho_1	

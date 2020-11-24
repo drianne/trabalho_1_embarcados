@@ -3,47 +3,47 @@
 #include <stdlib.h>
 #include <bcm2835.h>
 #include <unistd.h>
+#include "../../inc/gpio_module.h"
 
-#define ON 0
-#define OFF 1
 
-/* Setting pins */
-#define FAN RPI_V2_GPIO_P1_18 // BCM 24
-#define RESISTOR RPI_V2_GPIO_P1_16 // BCM 23
+void configura_pinos(){
+    bcm2835_gpio_fsel(RESISTOR, BCM2835_GPIO_FSEL_OUTP);
+    bcm2835_gpio_fsel(VENTI, BCM2835_GPIO_FSEL_OUTP);
+}
 
-void start_resistor(int resistor_mask) {
+void start_resistor(int resistor_mask){
     bcm2835_gpio_write(RESISTOR, resistor_mask & 1 );
 }
 
-void start_fan(int fan_mask) {
-    bcm2835_gpio_write(FAN, fan_mask & 1 );
+void start_fan(int fan_mask){
+    bcm2835_gpio_write(VENTI, fan_mask & 1 );
 }
 
-void setting_pins(){
-    // Setting pins as out
-    bcm2835_gpio_fsel(RESISTOR, BCM2835_GPIO_FSEL_OUTP);
-    bcm2835_gpio_fsel(FAN, BCM2835_GPIO_FSEL_OUTP);
-}
-
-int test_module(){
+void *temperature_control_gpio(void *params){
+    struct Sensors *temps = params;
 
     if (!bcm2835_init())
       exit(1);
       
-    setting_pins();
+    configura_pinos();
 
-    start_resistor(OFF);
-    start_fan(OFF);
-    sleep(2);
-    printf("Liga Ventoinha\n");
-    start_fan(ON);
-    sleep(3);
-    printf("Liga Resistor\n");
-    start_resistor(ON);
-    sleep(3);
-    printf("Desligando Ventoinha\n");
-    start_fan(OFF);
-    sleep(3);
-    printf("Desligando Resistor\n");
-    start_resistor(OFF);
+    int counter;
+    while(1){
+        if(temps->temp_interna < (temps->temp_read - temps->hysteresis)){
+            // Liga resistor
+            start_resistor(ON);
+            start_fan(OFF);
+        }
+        else if(temps->temp_interna > (temps->temp_read + temps->hysteresis)){
+            // Liga Ventilador
+            start_resistor(OFF);
+            start_fan(ON);
+        } 
+        else {
+            // Desliga os dois
+            start_resistor(OFF);
+            start_fan(OFF);
+        }
+        usleep(500000);
+    }
 }
