@@ -1,6 +1,6 @@
 ## Embarcados
 
-Para rodar o trabalho basta entrar na página do projeto e rodar make. 
+Para rodar o trabalho basta entrar na pasta do projeto e rodar make. 
 
 ### Funcionalidades 
 
